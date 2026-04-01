@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import shape — Datasaurus 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#18181a;--ink2:#46464e;--ink3:#8a8a94;
+  --rule:#e8e8ee;--rule2:#f2f2f6;--bg:#f7f7f9;--white:#fff;
+  --blue:#2563eb;--blue-dim:#eff3ff;--blue-text:#1d4ed8;
+  --green:#059669;--red:#dc2626;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --r:8px;--rlg:14px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+
+header{
+  height:58px;background:var(--white);border-bottom:1px solid var(--rule);
+  padding:0 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.logo-box{width:30px;height:30px;border-radius:7px;background:var(--ink);display:grid;place-items:center;flex-shrink:0}
+.logo-name{font-family:var(--mono);font-size:.88rem;font-weight:500}
+.back-link{font-family:var(--mono);font-size:.75rem;color:var(--ink3);text-decoration:none;transition:color .12s}
+.back-link:hover{color:var(--blue)}
+
+main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 24px}
+.card{
+  background:var(--white);border:1px solid var(--rule);border-radius:var(--rlg);
+  padding:36px 40px;width:100%;max-width:560px;
+}
+h1{font-size:1.3rem;font-weight:500;letter-spacing:-.02em;margin-bottom:6px}
+.subtitle{font-size:.82rem;color:var(--ink3);margin-bottom:32px;line-height:1.6}
+
+.field{margin-bottom:20px}
+label{display:block;font-size:.78rem;font-weight:500;color:var(--ink2);margin-bottom:6px}
+.hint{font-size:.72rem;color:var(--ink3);margin-top:4px;font-family:var(--mono)}
+
+input[type=text], input[type=color], select{
+  width:100%;padding:8px 11px;border:1.5px solid var(--rule);border-radius:var(--r);
+  background:var(--white);color:var(--ink);font-family:var(--sans);font-size:.85rem;
+  transition:border-color .12s;
+}
+input[type=text]:focus,select:focus{outline:none;border-color:var(--blue)}
+
+.color-row{display:flex;gap:10px;align-items:center}
+input[type=color]{width:44px;height:36px;padding:2px;cursor:pointer;flex-shrink:0}
+.color-hex{flex:1}
+
+/* Drop zone */
+.drop-zone{
+  border:2px dashed var(--rule);border-radius:var(--rlg);padding:32px 24px;
+  text-align:center;cursor:pointer;transition:border-color .15s,background .15s;
+  margin-bottom:8px;position:relative;
+}
+.drop-zone.over,.drop-zone:hover{border-color:var(--blue);background:var(--blue-dim)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:2rem;margin-bottom:8px;display:block}
+.dz-label{font-size:.85rem;color:var(--ink2)}
+.dz-sub{font-size:.72rem;color:var(--ink3);font-family:var(--mono);margin-top:4px}
+.dz-filename{
+  display:none;font-family:var(--mono);font-size:.78rem;color:var(--blue-text);
+  margin-top:8px;word-break:break-all;
+}
+
+/* Rescale toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;background:var(--bg);border-radius:var(--r);border:1px solid var(--rule)}
+.toggle-label{font-size:.82rem;color:var(--ink2)}
+.toggle-desc{font-size:.7rem;color:var(--ink3);font-family:var(--mono);margin-top:2px}
+.switch{position:relative;width:38px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--rule);border-radius:11px;transition:.2s;cursor:pointer}
+.slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked+.slider{background:var(--blue)}
+input:checked+.slider::before{transform:translateX(16px)}
+
+.submit-btn{
+  width:100%;padding:10px;border:none;border-radius:var(--r);
+  background:var(--blue);color:#fff;font-family:var(--sans);font-size:.9rem;
+  font-weight:500;cursor:pointer;transition:background .12s;margin-top:8px;
+}
+.submit-btn:hover{background:#1d4ed8}
+.submit-btn:disabled{background:var(--ink3);cursor:not-allowed}
+
+/* Result panel */
+.result{
+  display:none;margin-top:24px;padding:16px 18px;border-radius:var(--r);
+  font-family:var(--mono);font-size:.78rem;line-height:1.8;
+}
+.result.success{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
+.result.error{background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d}
+.result.visible{display:block}
+
+.stats-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.74rem}
+.stats-table td{padding:3px 8px;border:1px solid #bbf7d0}
+.stats-table td:first-child{color:#166534;font-weight:500}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-box">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="4" cy="9" r="2.2" fill="#fff" opacity=".9"/>
+        <circle cx="9" cy="4" r="1.6" fill="#fff" opacity=".7"/>
+        <circle cx="13" cy="11" r="1.4" fill="#fff" opacity=".55"/>
+        <circle cx="7" cy="13" r="1.1" fill="#fff" opacity=".4"/>
+      </svg>
+    </div>
+    <span class="logo-name">datasaurus 3d</span>
+  </a>
+  <a class="back-link" href="/">← back to charts</a>
+</header>
+
+<main>
+  <div class="card">
+    <h1>Import a shape</h1>
+    <p class="subtitle">
+      Upload a CSV with X and Y columns. The coordinates will be rescaled so your
+      shape shares the same summary statistics as all other charts —
+      mean&nbsp;=&nbsp;50, std&nbsp;=&nbsp;22 — preserving the Datasaurus spirit.
+    </p>
+
+    <form id="import-form" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- File drop zone -->
+      <div class="field">
+        <label>CSV file</label>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" name="csv_file" id="csv-file" accept=".csv,.tsv,.txt" required>
+          <span class="dz-icon">📂</span>
+          <div class="dz-label">Drop a CSV file here, or click to browse</div>
+          <div class="dz-sub">Columns: x, y (header optional) · comma / tab / semicolon</div>
+          <div class="dz-filename" id="dz-filename"></div>
+        </div>
+      </div>
+
+      <!-- Label -->
+      <div class="field">
+        <label for="label">Shape label</label>
+        <input type="text" id="label" name="label" placeholder="e.g. Rocket" maxlength="64">
+        <div class="hint">Display name shown in the dropdown. Auto-derived from filename if empty.</div>
+      </div>
+
+      <!-- Slug -->
+      <div class="field">
+        <label for="slug">Slug <span style="color:var(--ink3);font-weight:400">(optional)</span></label>
+        <input type="text" id="slug" name="slug" placeholder="e.g. rocket" pattern="[a-z0-9_-]+" maxlength="50">
+        <div class="hint">URL-safe id, e.g. "rocket". Auto-derived from label if empty.</div>
+      </div>
+
+      <!-- Emoji + Color -->
+      <div class="field">
+        <label>Emoji &amp; colour</label>
+        <div style="display:flex;gap:10px">
+          <input type="text" id="emoji" name="emoji" value="◉" maxlength="4" style="width:72px;text-align:center;font-size:1.2rem">
+          <div class="color-row" style="flex:1">
+            <input type="color" id="color-pick" value="#6366f1" oninput="document.getElementById('color-hex').value=this.value">
+            <input type="text" id="color-hex" name="color" value="#6366f1" class="color-hex"
+                   pattern="#[0-9a-fA-F]{6}" maxlength="7"
+                   oninput="if(this.value.match(/^#[0-9a-fA-F]{6}$/))document.getElementById('color-pick').value=this.value">
+          </div>
+        </div>
+      </div>
+
+      <!-- Rescale toggle -->
+      <div class="field">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Rescale to shared statistics</div>
+            <div class="toggle-desc">mean = 50.0 · std = 22.0 on both axes</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rescale" name="rescale" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">Import shape</button>
+    </form>
+
+    <div class="result" id="result"></div>
+  </div>
+</main>
+
+<script>
+// ── Drop zone ──────────────────────────────────────────────────────────────
+const dz = document.getElementById('drop-zone');
+const fi = document.getElementById('csv-file');
+const fn = document.getElementById('dz-filename');
+
+fi.addEventListener('change', () => {
+  if (fi.files[0]) {
+    fn.textContent = fi.files[0].name;
+    fn.style.display = 'block';
+    // Auto-fill label from filename if empty
+    const lab = document.getElementById('label');
+    if (!lab.value) {
+      lab.value = fi.files[0].name.replace(/\.[^.]+$/, '').replace(/[_-]/g,' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+  }
+});
+
+['dragenter','dragover'].forEach(ev =>
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+['dragleave','drop'].forEach(ev =>
+  dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+dz.addEventListener('drop', e => {
+  if (e.dataTransfer.files[0]) {
+    fi.files = e.dataTransfer.files;
+    fi.dispatchEvent(new Event('change'));
+  }
+});
+
+// ── Form submit ────────────────────────────────────────────────────────────
+document.getElementById('import-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const res = document.getElementById('result');
+  btn.disabled = true;
+  btn.textContent = 'Importing…';
+  res.className = 'result';
+  res.innerHTML = '';
+
+  try {
+    const fd = new FormData(e.target);
+    // colour comes from the text input (allows manual hex editing)
+    fd.set('color', document.getElementById('color-hex').value);
+    // rescale checkbox — send '1' if checked
+    fd.set('rescale', document.getElementById('rescale').checked ? '1' : '0');
+
+    const resp = await fetch('/import/upload/', { method: 'POST', body: fd });
+    const data = await resp.json();
+
+    if (data.ok) {
+      res.className = 'result success visible';
+      res.innerHTML = `
+        <strong>✓ Shape imported successfully</strong><br>
+        <br>
+        <table class="stats-table">
+          <tr><td>Label</td><td>${data.label}</td></tr>
+          <tr><td>Slug</td><td>${data.slug}</td></tr>
+          <tr><td>Points</td><td>${data.n_points}</td></tr>
+          <tr><td>mean X</td><td>${data.mean_x}</td></tr>
+          <tr><td>std X</td><td>${data.std_x}</td></tr>
+          <tr><td>mean Y</td><td>${data.mean_y}</td></tr>
+          <tr><td>std Y</td><td>${data.std_y}</td></tr>
+        </table>
+        <br>
+        <a href="/" style="color:#059669;font-weight:500">→ View in charts</a>
+      `;
+    } else {
+      res.className = 'result error visible';
+      res.innerHTML = `<strong>✗ Import failed</strong><br><br>${data.error}`;
+    }
+  } catch (err) {
+    res.className = 'result error visible';
+    res.innerHTML = `<strong>✗ Network error</strong><br><br>${err.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Import shape';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% if mode == 'login' %}Sign in{% else %}Create account{% endif %} — Datasaurus 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#18181a;--ink2:#46464e;--ink3:#8a8a94;
+  --rule:#e8e8ee;--bg:#f7f7f9;--white:#fff;
+  --blue:#2563eb;--blue-dim:#eff3ff;--blue-text:#1d4ed8;
+  --red:#dc2626;--red-dim:#fef2f2;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --r:8px;--rlg:14px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+
+.card{
+  background:var(--white);border:1px solid var(--rule);border-radius:var(--rlg);
+  padding:40px;width:100%;max-width:400px;
+}
+
+.logo{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:32px;text-decoration:none;color:var(--ink)}
+.logo-box{width:28px;height:28px;border-radius:6px;background:var(--ink);display:grid;place-items:center}
+.logo-name{font-family:var(--mono);font-size:.88rem;font-weight:500}
+
+h1{font-size:1.2rem;font-weight:500;text-align:center;margin-bottom:6px}
+.subtitle{font-size:.8rem;color:var(--ink3);text-align:center;margin-bottom:28px}
+
+.field{margin-bottom:16px}
+label{display:block;font-size:.78rem;font-weight:500;color:var(--ink2);margin-bottom:5px}
+input[type=text],input[type=password]{
+  width:100%;padding:9px 12px;border:1.5px solid var(--rule);border-radius:var(--r);
+  background:var(--white);color:var(--ink);font-family:var(--sans);font-size:.88rem;
+  transition:border-color .12s;
+}
+input:focus{outline:none;border-color:var(--blue)}
+
+.error{
+  background:var(--red-dim);border:1px solid #fecaca;border-radius:var(--r);
+  padding:10px 14px;font-size:.8rem;color:var(--red);margin-bottom:16px;
+}
+
+.submit-btn{
+  width:100%;padding:10px;border:none;border-radius:var(--r);
+  background:var(--blue);color:#fff;font-family:var(--sans);
+  font-size:.9rem;font-weight:500;cursor:pointer;transition:background .12s;margin-top:4px;
+}
+.submit-btn:hover{background:var(--blue-text)}
+
+.switch-mode{
+  text-align:center;margin-top:20px;font-size:.8rem;color:var(--ink3);
+}
+.switch-mode a{color:var(--blue);text-decoration:none}
+.switch-mode a:hover{text-decoration:underline}
+
+.divider{
+  display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--ink3);
+  font-size:.75rem;font-family:var(--mono);
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--rule)}
+</style>
+</head>
+<body>
+<div class="card">
+  <a class="logo" href="/">
+    <div class="logo-box">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <circle cx="4" cy="9" r="2.2" fill="#fff" opacity=".9"/>
+        <circle cx="9" cy="4" r="1.6" fill="#fff" opacity=".7"/>
+        <circle cx="13" cy="11" r="1.4" fill="#fff" opacity=".55"/>
+      </svg>
+    </div>
+    <span class="logo-name">datasaurus 3d</span>
+  </a>
+
+  {% if mode == 'login' %}
+    <h1>Sign in</h1>
+    <p class="subtitle">Welcome back. Sign in to access your shapes.</p>
+  {% else %}
+    <h1>Create account</h1>
+    <p class="subtitle">Sign up to import and save your own shapes.</p>
+  {% endif %}
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" autocomplete="username"
+             value="{{ request.POST.username|default:'' }}" required autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="{% if mode == 'login' %}current-password{% else %}new-password{% endif %}" required>
+    </div>
+    {% if mode == 'register' %}
+    <div class="field">
+      <label for="password2">Confirm password</label>
+      <input type="password" id="password2" name="password2" autocomplete="new-password" required>
+    </div>
+    {% endif %}
+    <button type="submit" class="submit-btn">
+      {% if mode == 'login' %}Sign in{% else %}Create account{% endif %}
+    </button>
+  </form>
+
+  <div class="switch-mode">
+    {% if mode == 'login' %}
+      No account? <a href="/register/">Create one</a>
+    {% else %}
+      Already have an account? <a href="/login/">Sign in</a>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>

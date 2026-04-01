@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datasaurus 3D — Same stats, different shapes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#18181a;--ink2:#46464e;--ink3:#8a8a94;
+  --rule:#e8e8ee;--rule2:#f2f2f6;
+  --bg:#f7f7f9;--white:#fff;
+  --blue:#2563eb;--blue-dim:#eff3ff;--blue-text:#1d4ed8;
+  --green:#059669;--purple:#7c3aed;
+  --r:8px;--rlg:14px;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --sh:0 1px 2px rgba(0,0,0,.05),0 3px 8px rgba(0,0,0,.06);
+}
+html{font-size:15px}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+header{
+  height:58px;background:var(--white);border-bottom:1px solid var(--rule);
+  padding:0 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.logo-box{
+  width:30px;height:30px;border-radius:7px;background:var(--ink);
+  display:grid;place-items:center;flex-shrink:0;
+}
+.logo-name{font-family:var(--mono);font-size:.88rem;font-weight:500;letter-spacing:-.01em}
+.header-tag{font-family:var(--mono);font-size:.68rem;color:var(--ink3);letter-spacing:.06em}
+
+/* Layout */
+.layout{flex:1;display:grid;grid-template-columns:292px 1fr;min-height:0}
+
+/* Sidebar */
+aside{
+  background:var(--white);border-right:1px solid var(--rule);
+  padding:24px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:24px;
+}
+.sec-label{
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:10px;
+}
+
+/* Axes */
+.axis-rows{display:flex;flex-direction:column;gap:12px}
+.ax-row{display:flex;flex-direction:column;gap:4px}
+.ax-lbl{display:flex;align-items:center;gap:6px}
+.ax-badge{
+  font-family:var(--mono);font-size:.62rem;font-weight:500;
+  width:17px;height:17px;border-radius:4px;display:grid;place-items:center;
+  flex-shrink:0;
+}
+.ax-badge.x{background:var(--ink);color:var(--white)}
+.ax-badge.y{background:var(--green);color:var(--white)}
+.ax-badge.z{background:var(--purple);color:var(--white)}
+.ax-name{font-size:.78rem;color:var(--ink2)}
+select{
+  width:100%;padding:6px 28px 6px 9px;border:1.5px solid var(--rule);
+  border-radius:var(--r);background:var(--white);color:var(--ink);
+  font-family:var(--sans);font-size:.8rem;appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%238a8a94' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;
+  transition:border-color .12s;
+}
+select:focus{outline:none;border-color:var(--blue)}
+
+/* Stats */
+.stats-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.75rem}
+.stats-table tr{border-bottom:1px solid var(--rule2)}
+.stats-table tr:last-child{border:none}
+.stats-table td{padding:5px 4px;color:var(--ink2)}
+.stats-table td:first-child{color:var(--ink3);font-size:.68rem;letter-spacing:.03em;white-space:nowrap}
+.stats-table td.val{color:var(--ink);font-weight:500;text-align:right}
+.stats-table td.match{color:var(--green);font-weight:500;text-align:right}
+
+/* Callout */
+.callout{
+  border-left:3px solid var(--blue);background:var(--blue-dim);
+  padding:10px 13px;border-radius:0 var(--r) var(--r) 0;
+  font-size:.76rem;line-height:1.65;color:var(--blue-text);
+}
+.callout strong{font-weight:500}
+
+/* Main */
+main{display:flex;flex-direction:column;padding:24px 28px 20px;gap:14px;min-width:0;overflow:hidden}
+
+.main-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.chart-title{font-size:1.3rem;font-weight:300;letter-spacing:-.025em;line-height:1.2}
+.chart-title strong{font-weight:500}
+.chart-hint{font-size:.75rem;color:var(--ink3);margin-top:2px;font-family:var(--mono)}
+
+.btns{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.pill-btn{
+  font-family:var(--mono);font-size:.7rem;padding:5px 13px;
+  border:1.5px solid var(--rule);border-radius:100px;background:var(--white);
+  cursor:pointer;color:var(--ink2);transition:all .12s;white-space:nowrap;
+}
+.pill-btn:hover,.pill-btn.active{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.export-btn{font-family:var(--mono);font-size:.7rem;padding:5px 13px;border:1.5px solid var(--green);border-radius:100px;background:var(--white);cursor:pointer;color:var(--green);transition:all .12s;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+.export-btn:hover{background:#f0fdf4;border-color:#047857;color:#047857}
+
+/* Chart wrapper */
+.chart-wrap{
+  flex:1;min-height:0;background:var(--white);border:1px solid var(--rule);
+  border-radius:var(--rlg);overflow:hidden;box-shadow:var(--sh);position:relative;
+}
+#plot{width:100%;min-height:500px;height:100%}
+
+/* Loading */
+.loader{
+  position:absolute;inset:0;background:rgba(247,247,249,.88);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  z-index:10;border-radius:var(--rlg);
+}
+.loader.on{display:flex}
+.spin{
+  width:26px;height:26px;border-radius:50%;
+  border:2px solid var(--rule);border-top-color:var(--blue);
+  animation:sp .65s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader-txt{font-family:var(--mono);font-size:.7rem;color:var(--ink3)}
+
+/* Compare grid */
+#cmp-grid{display:none;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;flex:1;min-height:0}
+#cmp-grid.on{display:grid}
+.cmp-cell{
+  background:var(--white);border:1px solid var(--rule);border-radius:var(--rlg);
+  overflow:hidden;box-shadow:var(--sh);display:flex;flex-direction:column;
+}
+.cmp-head{
+  padding:9px 14px;border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:.72rem;color:var(--ink2);
+}
+.cmp-head .cmp-lbl{display:flex;align-items:center;gap:6px}
+.cmp-dot{width:8px;height:8px;border-radius:50%}
+.cmp-stat{font-size:.66rem;color:var(--ink3)}
+
+/* Stats highlight bar */
+.stats-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--bg);border:1px solid var(--rule);border-radius:100px;
+  padding:3px 10px;font-family:var(--mono);font-size:.68rem;color:var(--ink3);
+}
+.stats-pill .sp-val{color:var(--ink);font-weight:500;margin-left:2px}
+
+.footer-hint{
+  font-family:var(--mono);font-size:.66rem;color:var(--ink3);
+  text-align:center;letter-spacing:.03em;padding:2px 0 4px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-box">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="4"  cy="9"  r="2.2" fill="#fff" opacity=".9"/>
+        <circle cx="9"  cy="4"  r="1.6" fill="#fff" opacity=".7"/>
+        <circle cx="13" cy="11" r="1.4" fill="#fff" opacity=".55"/>
+        <circle cx="7"  cy="13" r="1.1" fill="#fff" opacity=".4"/>
+        <circle cx="12" cy="6"  r="1.0" fill="#fff" opacity=".35"/>
+      </svg>
+    </div>
+    <span class="logo-name">datasaurus 3d</span>
+  </a>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="header-tag">same statistics &middot; different shapes</span>
+    {% if user.is_authenticated %}
+      <a href="/import/" style="font-family:var(--mono);font-size:.7rem;color:var(--ink3);text-decoration:none;border:1.5px solid var(--rule);border-radius:100px;padding:4px 12px;transition:all .12s;" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--rule)';this.style.color='var(--ink3)'">+ Import CSV</a>
+      <span style="font-family:var(--mono);font-size:.7rem;color:var(--ink3)">{{ user.username }}</span>
+      <a href="/logout/" style="font-family:var(--mono);font-size:.7rem;color:var(--ink3);text-decoration:none;border:1.5px solid var(--rule);border-radius:100px;padding:4px 12px;transition:all .12s;" onmouseover="this.style.borderColor='var(--rule)';this.style.color='var(--red,#dc2626)'" onmouseout="this.style.borderColor='var(--rule)';this.style.color='var(--ink3)'">Sign out</a>
+    {% else %}
+      <a href="/login/" style="font-family:var(--mono);font-size:.7rem;color:var(--ink3);text-decoration:none;border:1.5px solid var(--rule);border-radius:100px;padding:4px 12px;transition:all .12s;" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--rule)';this.style.color='var(--ink3)'">Sign in</a>
+      <a href="/register/" style="font-family:var(--mono);font-size:.7rem;color:var(--white);text-decoration:none;background:var(--blue);border:1.5px solid var(--blue);border-radius:100px;padding:4px 12px;transition:background .12s;" onmouseover="this.style.background='var(--blue-text)'" onmouseout="this.style.background='var(--blue)'">Create account</a>
+    {% endif %}
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside>
+
+    <div>
+      <div class="sec-label">Shape</div>
+      <div class="ax-row">
+        <div class="ax-lbl"><span class="ax-badge" style="background:#18181a;color:#fff;font-size:.7rem">S</span><span class="ax-name">Select shape</span></div>
+        <select id="sel-shape">
+          {% for shape in shapes %}
+          <option value="{{ shape.id }}" {% if shape.id == default_shape %}selected{% endif %}>{{ shape.emoji }} {{ shape.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-label">Axes</div>
+      <div class="axis-rows">
+        <div class="ax-row">
+          <div class="ax-lbl"><span class="ax-badge x">X</span><span class="ax-name">Horizontal</span></div>
+          <select id="sel-x">
+            {% for m in metrics %}<option value="{{ m.id }}"{% if m.id == default_x %} selected{% endif %}>{{ m.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="ax-row">
+          <div class="ax-lbl"><span class="ax-badge y">Y</span><span class="ax-name">Vertical</span></div>
+          <select id="sel-y">
+            {% for m in metrics %}<option value="{{ m.id }}"{% if m.id == default_y %} selected{% endif %}>{{ m.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="ax-row">
+          <div class="ax-lbl"><span class="ax-badge z">Z</span><span class="ax-name">Depth</span></div>
+          <select id="sel-z">
+            {% for m in metrics %}<option value="{{ m.id }}"{% if m.id == default_z %} selected{% endif %}>{{ m.label }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-label">Statistics — <span style="color:var(--green);font-size:.62rem">identical across all shapes</span></div>
+      <table class="stats-table" id="stats-tbl">
+        <tr><td>mean X</td><td class="val" id="s-mx">—</td><td class="match" id="s-mx-m"></td></tr>
+        <tr><td>mean Y</td><td class="val" id="s-my">—</td><td class="match" id="s-my-m"></td></tr>
+        <tr><td>std X</td><td class="val" id="s-sx">—</td><td class="match" id="s-sx-m"></td></tr>
+        <tr><td>std Y</td><td class="val" id="s-sy">—</td><td class="match" id="s-sy-m"></td></tr>
+        <tr><td>mean Z</td><td class="val" id="s-mz">—</td><td class="match" id="s-mz-m"></td></tr>
+        <tr><td>std Z</td><td class="val" id="s-sz">—</td><td class="match" id="s-sz-m"></td></tr>
+        <tr><td>corr(X,Y)</td><td class="val" id="s-cxy">—</td></tr>
+        <tr><td>corr(X,Z)</td><td class="val" id="s-cxz">—</td></tr>
+        <tr><td>corr(Y,Z)</td><td class="val" id="s-cyz">—</td></tr>
+        <tr><td>n points</td><td class="val" id="s-n">—</td></tr>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>The Datasaurus trick:</strong> every shape here has
+      <strong>mean&nbsp;=&nbsp;50.0</strong> and <strong>std&nbsp;=&nbsp;22.0</strong>
+      on every axis — yet the 3D silhouettes look completely different.
+      Always visualise your data.
+    </div>
+
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <div class="main-header">
+      <div>
+        <div class="chart-title" id="chart-title">
+          <strong id="shape-name">T-Rex</strong>
+          <span style="color:var(--ink3)"> in 3D scatter space</span>
+        </div>
+        <div class="chart-hint" id="chart-hint">Drag to rotate · Scroll to zoom · Double-click to reset</div>
+      </div>
+      <div class="btns">
+        <div class="stats-pill">μ<span class="sp-val">50.0</span></div>
+        <div class="stats-pill">σ<span class="sp-val">22.0</span></div>
+        <button class="pill-btn active" id="btn-single"  onclick="setMode('single')">Single</button>
+        <button class="pill-btn"        id="btn-compare" onclick="setMode('compare')">Compare all</button>
+        <a id="btn-export" class="export-btn" href="#" download>↓ CSV</a>
+      </div>
+    </div>
+
+    <!-- Single view -->
+    <div class="chart-wrap" id="single-wrap">
+      <div class="loader" id="loader">
+        <div class="spin"></div>
+        <div class="loader-txt">Building point cloud…</div>
+      </div>
+      <div id="plot"></div>
+    </div>
+
+    <!-- Compare view -->
+    <div id="cmp-grid"></div>
+
+    <div class="footer-hint">Switch shapes — the statistics panel barely moves &nbsp;✦</div>
+  </main>
+</div>
+
+<script>
+const SHAPES  = {{ shapes_json|safe }};
+const METRICS = {{ metrics_json|safe }};
+
+let activeShape = '{{ default_shape }}';
+let xM = '{{ default_x }}', yM = '{{ default_y }}', zM = '{{ default_z }}';
+let mode = 'single';
+let cam = null;
+
+// ── Plotly base layout ────────────────────────────────────────────────────
+const BASE_SCENE = {
+  xaxis:{ gridcolor:'#e8e8ee', zerolinecolor:'#e8e8ee', backgroundcolor:'#f7f7f9', showspikes:false },
+  yaxis:{ gridcolor:'#e8e8ee', zerolinecolor:'#e8e8ee', backgroundcolor:'#f7f7f9', showspikes:false },
+  zaxis:{ gridcolor:'#e8e8ee', zerolinecolor:'#e8e8ee', backgroundcolor:'#f0f0f4', showspikes:false },
+  bgcolor:'#f7f7f9',
+  aspectmode:'cube',
+};
+const BASE_LAYOUT = {
+  paper_bgcolor:'transparent',
+  plot_bgcolor:'transparent',
+  margin:{l:0,r:0,t:10,b:10},
+  font:{family:"'DM Mono',monospace",size:10,color:'#46464e'},
+};
+
+function buildColorscale(hex) {
+  return [[0,'#f0f0f4'],[0.45,lerp('#f0f0f4', hex, 0.5)],[1, hex]];
+}
+function lerp(a, b, t) {
+  const n1=parseInt(a.replace('#',''),16), n2=parseInt(b.replace('#',''),16);
+  const r=Math.round(((n1>>16)&0xff)*(1-t)+((n2>>16)&0xff)*t);
+  const g=Math.round(((n1>> 8)&0xff)*(1-t)+((n2>> 8)&0xff)*t);
+  const bl=Math.round((n1&0xff)*(1-t)+(n2&0xff)*t);
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${bl.toString(16).padStart(2,'0')}`;
+}
+
+function metricLabel(id) {
+  const m = METRICS.find(m=>m.id===id);
+  return m ? m.label : id;
+}
+
+function buildTrace(data, size=5, opacity=0.85) {
+  return {
+    type:'scatter3d', mode:'markers',
+    x:data.x, y:data.y, z:data.z, name:data.label,
+    marker:{
+      size, opacity,
+      color:data.z,
+      colorscale:buildColorscale(data.color),
+      line:{width:0},
+    },
+    hovertemplate:`<b>${data.label}</b><br>x: %{x:.1f}<br>y: %{y:.1f}<br>z: %{z:.1f}<extra></extra>`,
+  };
+}
+
+async function fetchShape(sid, x, y, z) {
+  const r = await fetch(`/api/data/${sid}/?x=${x}&y=${y}&z=${z}`);
+  return r.json();
+}
+
+function updateStats(st) {
+  document.getElementById('s-mx').textContent  = st.mean_x.toFixed(3);
+  document.getElementById('s-my').textContent  = st.mean_y.toFixed(3);
+  document.getElementById('s-sx').textContent  = st.std_x.toFixed(3);
+  document.getElementById('s-sy').textContent  = st.std_y.toFixed(3);
+  document.getElementById('s-mz').textContent  = st.mean_z.toFixed(3);
+  document.getElementById('s-sz').textContent  = st.std_z.toFixed(3);
+  document.getElementById('s-cxy').textContent = st.corr_xy.toFixed(3);
+  document.getElementById('s-cxz').textContent = st.corr_xz.toFixed(3);
+  document.getElementById('s-cyz').textContent = st.corr_yz.toFixed(3);
+  document.getElementById('s-n').textContent   = st.n;
+  // Green checkmarks for locked stats
+  ['mx','my','sx','sy','mz','sz'].forEach(k => {
+    document.getElementById(`s-${k}-m`).textContent = '✓';
+  });
+}
+
+// ── Single mode ───────────────────────────────────────────────────────────
+async function renderSingle() {
+  document.getElementById('loader').classList.add('on');
+  try {
+    const data = await fetchShape(activeShape, xM, yM, zM);
+    const trace = buildTrace(data, 5, 0.85);
+    const layout = {
+      ...BASE_LAYOUT,
+      scene:{
+        ...BASE_SCENE,
+        xaxis:{...BASE_SCENE.xaxis, title:{text:metricLabel(xM),font:{size:9}}},
+        yaxis:{...BASE_SCENE.yaxis, title:{text:metricLabel(yM),font:{size:9}}},
+        zaxis:{...BASE_SCENE.zaxis, title:{text:metricLabel(zM),font:{size:9}}},
+        camera: cam || {eye:{x:1.5,y:1.2,z:0.9}},
+      },
+    };
+    Plotly.react('plot', [trace], layout, {displayModeBar:false, responsive:true});
+    document.getElementById('plot').on('plotly_relayout', ev => {
+      if (ev['scene.camera']) cam = ev['scene.camera'];
+    });
+    updateStats(data.stats);
+    document.getElementById('shape-name').textContent = data.label;
+    updateExportLink();
+  } finally {
+    document.getElementById('loader').classList.remove('on');
+  }
+}
+
+// ── Compare mode ──────────────────────────────────────────────────────────
+async function renderCompare() {
+  const grid = document.getElementById('cmp-grid');
+  grid.innerHTML = '';
+
+  await Promise.all(SHAPES.map(async shape => {
+    const cell = document.createElement('div');
+    cell.className = 'cmp-cell';
+    cell.innerHTML = `
+      <div class="cmp-head">
+        <div class="cmp-lbl">
+          <div class="cmp-dot" style="background:${shape.color}"></div>
+          <span>${shape.emoji} ${shape.label}</span>
+        </div>
+        <span class="cmp-stat">μ=50.0 σ=22.0</span>
+      </div>
+      <div id="cp-${shape.id}" style="min-height:240px;flex:1"></div>
+    `;
+    grid.appendChild(cell);
+
+    const data = await fetchShape(shape.id, xM, yM, zM);
+    const layout = {
+      ...BASE_LAYOUT,
+      margin:{l:0,r:0,t:0,b:0},
+      scene:{
+        ...BASE_SCENE,
+        camera:{eye:{x:1.4,y:1.2,z:0.85}},
+        xaxis:{...BASE_SCENE.xaxis,title:''},
+        yaxis:{...BASE_SCENE.yaxis,title:''},
+        zaxis:{...BASE_SCENE.zaxis,title:''},
+      },
+    };
+    Plotly.newPlot(`cp-${shape.id}`, [buildTrace(data,3.5,0.82)], layout,
+      {displayModeBar:false, responsive:true});
+  }));
+}
+
+// ── Mode switch ───────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  const sw = document.getElementById('single-wrap');
+  const cg = document.getElementById('cmp-grid');
+  sw.style.display  = m==='single'  ? 'block' : 'none';
+  cg.classList.toggle('on', m==='compare');
+  document.getElementById('btn-single').classList.toggle('active',  m==='single');
+  document.getElementById('btn-compare').classList.toggle('active', m==='compare');
+  document.getElementById('chart-hint').textContent = m==='single'
+    ? 'Drag to rotate · Scroll to zoom · Double-click to reset'
+    : 'All shapes · same axes · same μ and σ · only silhouettes differ';
+  if (m==='single') renderSingle(); else renderCompare();
+}
+
+// ── Events ────────────────────────────────────────────────────────────────
+document.getElementById('sel-shape').addEventListener('change', e => {
+  activeShape = e.target.value;
+  // Update the chart title
+  const found = SHAPES.find(s => s.id === activeShape);
+  if (found) document.getElementById('shape-name').textContent = found.label;
+  if (mode==='single') renderSingle(); else renderCompare();
+});
+
+['sel-x','sel-y','sel-z'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    xM = document.getElementById('sel-x').value;
+    yM = document.getElementById('sel-y').value;
+    zM = document.getElementById('sel-z').value;
+    cam = null;
+    updateExportLink();
+    if (mode==='single') renderSingle(); else renderCompare();
+  });
+});
+
+// ── Export link ──────────────────────────────────────────────────────────────
+function updateExportLink() {
+  const btn = document.getElementById('btn-export');
+  if (!btn) return;
+  btn.href = `/api/data/${activeShape}/export/?x=${xM}&y=${yM}&z=${zM}`;
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+updateExportLink();
+renderSingle();
+</script>
+</body>
+</html>
